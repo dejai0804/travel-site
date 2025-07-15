@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy from Master to Web Server
 
 on:
   push:
@@ -7,43 +7,81 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2        
+      - name: Checkout Code from Master
+        uses: actions/checkout@v2
 
-#       - name: Prepare SSH
-#         run: |
-#           mkdir -p ~/.ssh
-#           touch ~/.ssh/known_hosts
-
-#       - name: Add SSH host key
-#         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      
-      # - name: Prepare SSH
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-      #     chmod 600 ~/.ssh/id_rsa
-      #     ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      
-      
-      # - name: Run commands on remote server
-      #   run: |
-      #     ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/ec2-user/ && echo 'Running a command on the remote server' > file.txt"
-
-#       - name: Clear known_hosts
-#         run: ssh-keygen -R ${{ secrets.SSH_HOST }}
-     
-#       - name: Update known_hosts
-#         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-   
-      - name: Deploy to remote server
+      - name: Prepare SSH for Web Server
         run: |
-          scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} ${{ github.workspace }}/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/ec2-user/
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
+          mkdir -p ~/.ssh
+          echo "${{ secrets.WEB_SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.WEB_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy Code to Web Server
+        run: |
+          scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ github.workspace }}/ ${{ secrets.WEB_SERVER_USER }}@${{ secrets.WEB_SERVER_HOST }}:/var/www/html/
+
+      - name: Restart Web Service (Optional)
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.WEB_SERVER_USER }}@${{ secrets.WEB_SERVER_HOST }} "sudo systemctl restart httpd"
+
+
+
+
+
+
+
+
+
+# name: Deploy to EC2
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2        
+
+# #       - name: Prepare SSH
+# #         run: |
+# #           mkdir -p ~/.ssh
+# #           touch ~/.ssh/known_hosts
+
+# #       - name: Add SSH host key
+# #         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+#       # - name: Prepare SSH
+#       #   run: |
+#       #     mkdir -p ~/.ssh
+#       #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+#       #     chmod 600 ~/.ssh/id_rsa
+#       #     ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      
+#       # - name: Run commands on remote server
+#       #   run: |
+#       #     ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/ec2-user/ && echo 'Running a command on the remote server' > file.txt"
+
+# #       - name: Clear known_hosts
+# #         run: ssh-keygen -R ${{ secrets.SSH_HOST }}
+     
+# #       - name: Update known_hosts
+# #         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+   
+#       - name: Deploy to remote server
+#         run: |
+#           scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} ${{ github.workspace }}/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/ec2-user/
+#         env:
+#           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+#           SSH_USER: ${{ secrets.SSH_USER }}
+#           SSH_HOST: ${{ secrets.SSH_HOST }}
+#           SSH_PORT: ${{ secrets.SSH_PORT }}
