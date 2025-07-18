@@ -13,13 +13,6 @@ jobs:
       - name: Checkout Code from Master
         uses: actions/checkout@v2
 
-      - name: Prepare SSH for Web Server
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SSH_PORT }} >> ~/.ssh/known_hosts
-
       - name: Deploy Code to Web Server
         run: |
           scp -r -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ github.workspace }}/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/
