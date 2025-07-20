@@ -20,7 +20,7 @@ jobs:
 
       - name: Restart Web Service (Optional)
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo systemctl restart httpd"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo systemctl status httpd"
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.SSH_USER }}
